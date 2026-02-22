@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unplug — Money Flow Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #faf8f3;
+    --paper: #fffef9;
+    --ink: #1a1a18;
+    --muted: #7a7a72;
+    --accent: #3a6b8a;
+    --accent2: #e8935a;
+    --green: #4a8c6a;
+    --red: #c0392b;
+    --border: #d8d4c8;
+    --shadow: rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Header */
+  header {
+    background: var(--paper);
+    border-bottom: 2px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+
+  header h1 {
+    font-family: 'Caveat', cursive;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--ink);
+  }
+
+  header h1 span { color: var(--accent); }
+
+  .header-total {
+    text-align: right;
+  }
+  .header-total .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .header-total .value {
+    font-family: 'Caveat', cursive;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  /* Main layout */
+  .main {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    min-height: calc(100vh - 72px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--paper);
+    border-right: 2px solid var(--border);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .sidebar-section h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+    color: var(--ink);
+    border-bottom: 1.5px dashed var(--border);
+    padding-bottom: 6px;
+  }
+
+  /* Total Sum Box */
+  .total-box {
+    background: var(--ink);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .total-box::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  .total-box .tb-label {
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    opacity: 0.7;
+    margin-bottom: 8px;
+  }
+  .total-box .tb-amount {
+    font-family: 'Caveat', cursive;
+    font-size: 2.4rem;
+    font-weight: 700;
+  }
+  .total-box .tb-edit {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .total-box input {
+    flex: 1;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    color: white;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .total-box input::placeholder { color: rgba(255,255,255,0.4); }
+  .total-box input:focus { border-color: rgba(255,255,255,0.6); }
+
+  /* Buttons */
+  .btn {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.18s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #2d5570; transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1.5px solid var(--red);
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+  .btn-danger:hover { background: var(--red); color: white; }
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Add Avatar Form */
+  .add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .add-form input, .add-form select {
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-form input:focus, .add-form select:focus { border-color: var(--accent); }
+
+  .avatar-picker {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .avatar-opt {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2.5px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    background: var(--bg);
+    transition: all 0.15s;
+  }
+  .avatar-opt:hover { transform: scale(1.1); }
+  .avatar-opt.selected { border-color: var(--accent); background: #e8f2f9; }
+
+  /* People list */
+  .people-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .people-list::-webkit-scrollbar { width: 4px; }
+  .people-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .person-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .person-chip:hover { border-color: var(--accent); background: #f0f6fb; }
+  .person-chip.selected-person { border-color: var(--accent); background: #e8f2f9; }
+  .person-chip .chip-avatar { font-size: 1.5rem; width: 36px; height: 36px; background: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--border); }
+  .person-chip .chip-info { flex: 1; min-width: 0; }
+  .person-chip .chip-name { font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person-chip .chip-balance {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .person-chip .chip-balance.positive { color: var(--green); }
+  .person-chip .chip-balance.negative { color: var(--red); }
+
+  /* Canvas area */
+  .canvas-area {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle, #d8d4c8 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  #flow-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .nodes-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+
+  /* Node */
+  .node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: grab;
+    user-select: none;
+    transition: filter 0.15s;
+  }
+  .node:active { cursor: grabbing; }
+  .node:hover { filter: drop-shadow(0 4px 12px rgba(58,107,138,0.25)); }
+
+  .node-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #c8e0f0;
+    border: 3px solid white;
+    box-shadow: 0 3px 12px var(--shadow), 0 0 0 2px var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    position: relative;
+    transition: all 0.15s;
+  }
+  .node.highlighted .node-avatar {
+    box-shadow: 0 3px 12px var(--shadow), 0 0 0 3px var(--accent);
+  }
+
+  .node-name {
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 6px;
+    color: var(--ink);
+    text-align: center;
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .node-card {
+    background: var(--paper);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 14px;
+    margin-top: 6px;
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 100px;
+    box-shadow: 2px 2px 0 var(--border);
+    position: relative;
+  }
+
+  .node-card.main-card {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+    box-shadow: 3px 3px 0 #555;
+  }
+
+  .node-remaining {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .node-remaining.neg { color: var(--red); }
+
+  .node-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .node:hover .node-actions { opacity: 1; }
+
+  .node-btn {
+    padding: 3px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper);
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.12s;
+  }
+  .node-btn:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+  .node-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+  /* Total Sum Node special */
+  .total-node {
+    background: var(--ink);
+    color: white;
+    border-radius: 14px;
+    padding: 16px 24px;
+    box-shadow: 4px 4px 0 #555;
+    text-align: center;
+    cursor: grab;
+    min-width: 160px;
+    position: absolute;
+  }
+  .total-node:active { cursor: grabbing; }
+  .total-node .tn-label {
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    opacity: 0.7;
+  }
+  .total-node .tn-amount {
+    font-family: 'Caveat', cursive;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  /* SVG arrows */
+  .arrow-path {
+    stroke: var(--accent);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 6 4;
+    animation: dash 1s linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes dash {
+    to { stroke-dashoffset: -10; }
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--paper);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    min-width: 360px;
+    max-width: 480px;
+    box-shadow: 6px 6px 0 var(--border);
+  }
+  .modal h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+  .modal .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .modal label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .modal input, .modal select {
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+  .modal .btn-row {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  /* Connections selector */
+  .connections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .conn-opt {
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    transition: all 0.12s;
+  }
+  .conn-opt:hover { border-color: var(--accent); background: #f0f6fb; }
+  .conn-opt.selected-conn { border-color: var(--accent); background: #e8f2f9; }
+  .conn-opt .conn-avatar { font-size: 1.2rem; }
+
+  /* Totals bar */
+  .totals-bar {
+    position: fixed;
+    bottom: 0;
+    left: 320px;
+    right: 0;
+    background: var(--paper);
+    border-top: 2px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    z-index: 50;
+  }
+  .totals-bar .stat {
+    text-align: center;
+  }
+  .totals-bar .stat .s-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+  .totals-bar .stat .s-value {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .totals-bar .stat .s-value.green { color: var(--green); }
+  .totals-bar .stat .s-value.red { color: var(--red); }
+
+  /* Toolbar */
+  .canvas-toolbar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  /* Handwritten arrow decoration */
+  .arrow-label {
+    font-family: 'Caveat', cursive;
+    font-size: 0.85rem;
+    fill: var(--muted);
+  }
+
+  /* Empty state */
+  .empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    text-align: center;
+    pointer-events: none;
+    opacity: 0.45;
+  }
+  .empty-state .es-icon { font-size: 4rem; margin-bottom: 12px; }
+  .empty-state h2 { font-family: 'Caveat', cursive; font-size: 1.6rem; color: var(--muted); }
+  .empty-state p { font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+
+  /* Tab in sidebar */
+  .sidebar-tabs {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .sidebar-tab {
+    flex: 1;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: var(--muted);
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .sidebar-tab.active {
+    background: var(--ink);
+    color: white;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* connecting mode */
+  .canvas-area.connecting-mode { cursor: crosshair; }
+  .connecting-hint {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    z-index: 20;
+    display: none;
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+  }
+  .connecting-hint.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <h1>Unplug <span>⚡</span> Flow</h1>
+    <span id="sync-status" style="font-size:0.78rem;font-family:'DM Sans',sans-serif;font-weight:500;color:#7a7a72;background:var(--bg);border:1.5px solid var(--border);padding:4px 10px;border-radius:20px;letter-spacing:0.3px;">⟳ Loading…</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="btn btn-secondary btn-sm" onclick="resetAll()" style="font-size:0.75rem;opacity:0.7;" title="Clear all data">🗑 Reset</button>
+  <div class="header-total">
+    <div class="label">Total Sum Received</div>
+    <div class="value" id="header-total">₹0</div>
+  </div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <!-- Total Sum -->
+    <div class="sidebar-section">
+      <h3>💰 Total Sum</h3>
+      <div class="total-box">
+        <div class="tb-label">Total Sum Received</div>
+        <div class="tb-amount" id="total-display">₹0</div>
+        <div class="tb-edit">
+          <input type="number" id="total-input" placeholder="Enter amount" />
+          <button class="btn btn-primary btn-sm" onclick="setTotal()">Set</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" onclick="switchTab('add')">+ Add Person</button>
+      <button class="sidebar-tab" onclick="switchTab('people')">People</button>
+    </div>
+
+    <!-- Add Person Tab -->
+    <div class="tab-content active" id="tab-add">
+      <div class="add-form">
+        <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:500;margin-bottom:4px;">Choose Avatar</div>
+        <div class="avatar-picker" id="avatar-picker">
+          🧑 👩 👨 🧔 👩‍🦱 👩‍🦰 👨‍🦱 👩‍🦳 👨‍🦳 🧕
+        </div>
+        <input type="text" id="new-name" placeholder="Person's name" />
+        <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:500;">Receives money from (select & enter amount per source)</div>
+        <div id="source-picker" style="font-size:0.85rem;color:var(--muted);">Set total sum first to add people</div>
+        <button class="btn btn-primary" onclick="addPerson()">Add to Flow</button>
+      </div>
+    </div>
+
+    <!-- People Tab -->
+    <div class="tab-content" id="tab-people">
+      <div class="people-list" id="people-list"></div>
+    </div>
+  </aside>
+
+  <!-- Canvas -->
+  <div class="canvas-area" id="canvas-area">
+    <div class="connecting-hint" id="connecting-hint">Click a person to connect →</div>
+    <div class="canvas-toolbar">
+      <button class="btn btn-secondary btn-sm" onclick="autoLayout()">↔ Auto Layout</button>
+    </div>
+    <svg id="flow-canvas"></svg>
+    <div class="nodes-container" id="nodes-container">
+      <div class="empty-state" id="empty-state">
+        <div class="es-icon">🗺️</div>
+        <h2>Canvas is empty</h2>
+        <p>Set total sum & add people to visualize the flow</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom bar -->
+<div class="totals-bar">
+  <div class="stat">
+    <div class="s-label">Total Received</div>
+    <div class="s-value" id="bar-total">₹0</div>
+  </div>
+  <div class="stat">
+    <div class="s-label">Total Distributed</div>
+    <div class="s-value green" id="bar-distributed">₹0</div>
+  </div>
+  <div class="stat">
+    <div class="s-label">Unaccounted</div>
+    <div class="s-value red" id="bar-unaccounted">₹0</div>
+  </div>
+  <div class="stat">
+    <div class="s-label">People</div>
+    <div class="s-value" id="bar-people">0</div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ Edit Person</h3>
+    <div class="form-row">
+      <label>Name</label>
+      <input type="text" id="edit-name" />
+    </div>
+    <div class="form-row">
+      <label>Sources & Amounts (check to enable, enter amount per source)</label>
+      <div id="edit-connections" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;"></div>
+    </div>
+    <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">
+      Total will be: <strong id="edit-total-preview">₹0</strong>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- State ----
+// person: { id, name, emoji, sources: [{srcId: 'total'|personId, amount: number}] }
+// person's total = sum of sources[].amount
+// person's balance = total - sum of what others draw from them
+let totalSum = 0;
+let people = [];
+let nodePositions = {};
+let totalNodePos = { x: 80, y: 80 };
+let editingId = null;
+let selectedEmoji = '🧑';
+// selectedSources for add form: Map<srcId, amount>
+let newSourceAmounts = new Map();
+let uid = 1;
+
+const AVATARS = ['🧑','👩','👨','🧔','👩‍🦱','👩‍🦰','👨‍🦱','👩‍🦳','👨‍🦳','🧕'];
+
+// ================================================================
+// SUPABASE CONFIG — paste your credentials here
+// ================================================================
+const SUPABASE_URL  = 'https://fwxfrukzqwvpcbeuonlc.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eGZydWt6cXd2cGNiZXVvbmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjkyNjksImV4cCI6MjA4NzM0NTI2OX0.c1A84hpzHigktiuHg_E0CZmrZGyW9mvjTZj4uF1NzqY';
+const STORAGE_KEY   = 'unplug_tracker_v1'; // localStorage fallback key
+
+// ---- Persistence (Supabase + localStorage fallback) ----
+
+// Save to localStorage immediately (instant), then sync to Supabase
+let saveTimer = null;
+function saveState() {
+  // 1. Always save locally first for instant feedback
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      totalSum, people, nodePositions, totalNodePos, uid
+    }));
+  } catch(e) {}
+
+  // 2. Debounce Supabase save (avoid hammering on drag)
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToSupabase, 800);
+}
+
+async function saveToSupabase() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return; // not configured yet
+  try {
+    setSyncStatus('saving');
+    const payload = { totalSum, people, nodePositions, totalNodePos, uid };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/unplug_state?id=eq.main`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ data: payload, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    setSyncStatus('saved');
+  } catch(e) {
+    setSyncStatus('error');
+    console.warn('Supabase save failed:', e);
+  }
+}
+
+async function loadState() {
+  // 1. Load from localStorage immediately so UI is instant
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      totalSum      = s.totalSum      ?? 0;
+      people        = s.people        ?? [];
+      nodePositions = s.nodePositions ?? {};
+      totalNodePos  = s.totalNodePos  ?? { x: 80, y: 80 };
+      uid           = s.uid           ?? 1;
+    }
+  } catch(e) {}
+
+  // 2. Then fetch from Supabase and overwrite if newer
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return;
+  try {
+    setSyncStatus('loading');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/unplug_state?id=eq.main&select=data`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    if (rows.length && rows[0].data && Object.keys(rows[0].data).length) {
+      const s = rows[0].data;
+      totalSum      = s.totalSum      ?? 0;
+      people        = s.people        ?? [];
+      nodePositions = s.nodePositions ?? {};
+      totalNodePos  = s.totalNodePos  ?? { x: 80, y: 80 };
+      uid           = s.uid           ?? 1;
+      // Update local cache with fresh cloud data
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    }
+    setSyncStatus('synced');
+    render(); // re-render with cloud data
+  } catch(e) {
+    setSyncStatus('error');
+    console.warn('Supabase load failed:', e);
+  }
+}
+
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const states = {
+    loading: { text: '⟳ Syncing…',  color: '#7a7a72' },
+    saving:  { text: '⟳ Saving…',   color: '#7a7a72' },
+    saved:   { text: '✓ Saved',      color: '#4a8c6a' },
+    synced:  { text: '✓ Synced',     color: '#4a8c6a' },
+    error:   { text: '✗ Offline',    color: '#c0392b' },
+  };
+  const s = states[status] || states.saved;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+function resetAll() {
+  if (!confirm('Reset everything? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  totalSum = 0; people = []; nodePositions = {}; totalNodePos = { x: 80, y: 80 }; uid = 1;
+  newSourceAmounts = new Map();
+  render();
+}
+
+// ---- Init ----
+window.onload = () => {
+  loadState();
+  renderAvatarPicker();
+  render();
+};
+
+function fmt(n) {
+  return '₹' + Number(n).toLocaleString('en-IN');
+}
+
+// ---- Balance helpers ----
+// How much a person has received in total
+function getPersonTotal(id) {
+  const p = people.find(x => x.id === id);
+  if (!p) return 0;
+  return p.sources.reduce((s, src) => s + src.amount, 0);
+}
+
+// How much has already been drawn FROM a given source (by others)
+function getDrawnFrom(srcId) {
+  return people.reduce((s, p) => {
+    const src = p.sources.find(x => x.srcId === srcId);
+    return s + (src ? src.amount : 0);
+  }, 0);
+}
+
+// Available balance of a source (what it can still give out)
+function getAvailableBalance(srcId, excludePersonId = null) {
+  if (srcId === 'total') {
+    // Total sum minus what's already been directly assigned FROM total
+    const drawn = people.filter(p => p.id !== excludePersonId)
+                        .reduce((s, p) => {
+                          const src = p.sources.find(x => x.srcId === 'total');
+                          return s + (src ? src.amount : 0);
+                        }, 0);
+    return totalSum - drawn;
+  } else {
+    const p = people.find(x => x.id === srcId);
+    if (!p) return 0;
+    const personTotal = getPersonTotal(srcId);
+    // already drawn by others (excluding the person being edited)
+    const drawn = people.filter(x => x.id !== excludePersonId)
+                        .reduce((s, x) => {
+                          const src = x.sources.find(y => y.srcId === srcId);
+                          return s + (src ? src.amount : 0);
+                        }, 0);
+    return personTotal - drawn;
+  }
+}
+
+// Person's remaining balance = what they hold after giving out to others
+function getPersonBalance(id) {
+  const total = getPersonTotal(id);
+  const givenOut = people.reduce((s, p) => {
+    const src = p.sources.find(x => x.srcId === id);
+    return s + (src ? src.amount : 0);
+  }, 0);
+  return total - givenOut;
+}
+
+// ---- Total Sum ----
+function setTotal() {
+  const v = parseFloat(document.getElementById('total-input').value);
+  if (isNaN(v) || v < 0) return;
+  totalSum = v;
+  document.getElementById('total-input').value = '';
+  saveState();
+  render();
+}
+
+// ---- Avatar Picker ----
+function renderAvatarPicker() {
+  const el = document.getElementById('avatar-picker');
+  el.innerHTML = '';
+  AVATARS.forEach(e => {
+    const d = document.createElement('div');
+    d.className = 'avatar-opt' + (e === selectedEmoji ? ' selected' : '');
+    d.textContent = e;
+    d.onclick = () => { selectedEmoji = e; renderAvatarPicker(); };
+    el.appendChild(d);
+  });
+}
+
+// ---- Source Picker (Add Form) ----
+// Each source row: checkbox + label + amount input
+function renderSourcePicker() {
+  const el = document.getElementById('source-picker');
+
+  if (totalSum === 0 && people.length === 0) {
+    el.innerHTML = '<span style="color:var(--muted);font-size:0.85rem">Set total sum first</span>';
+    return;
+  }
+
+  const allSources = [
+    { id: 'total', name: 'Total Sum', emoji: '💰', avail: getAvailableBalance('total') },
+    ...people.map(p => ({ id: p.id, name: p.name, emoji: p.emoji, avail: getAvailableBalance(p.id) }))
+  ];
+
+  el.innerHTML = '';
+  allSources.forEach(src => {
+    const checked = newSourceAmounts.has(src.id);
+    const curVal = newSourceAmounts.get(src.id) || '';
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);';
+    if (checked) row.style.borderColor = 'var(--accent)';
+
+    row.innerHTML = `
+      <input type="checkbox" data-srcid="${src.id}" ${checked ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)">
+      <span style="font-size:1.2rem">${src.emoji}</span>
+      <span style="flex:1;font-size:0.85rem;font-weight:500">${src.name}</span>
+      <span style="font-size:0.72rem;color:var(--muted)">avail: ${fmt(src.avail)}</span>
+      <input type="number" data-amtid="${src.id}" placeholder="₹" value="${curVal}"
+        style="width:80px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.82rem;background:var(--paper);${checked ? '' : 'opacity:0.4;pointer-events:none;'}"
+        min="0" max="${src.avail}">
+    `;
+
+    const cb = row.querySelector(`input[type=checkbox]`);
+    const amt = row.querySelector(`input[type=number]`);
+
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        newSourceAmounts.set(src.id, 0);
+        amt.style.opacity = '1';
+        amt.style.pointerEvents = 'auto';
+        row.style.borderColor = 'var(--accent)';
+        amt.focus();
+      } else {
+        newSourceAmounts.delete(src.id);
+        amt.style.opacity = '0.4';
+        amt.style.pointerEvents = 'none';
+        row.style.borderColor = 'var(--border)';
+      }
+    });
+
+    amt.addEventListener('input', () => {
+      if (!newSourceAmounts.has(src.id)) return;
+      let v = parseFloat(amt.value) || 0;
+      if (v > src.avail) { v = src.avail; amt.value = v; }
+      newSourceAmounts.set(src.id, v);
+    });
+
+    el.appendChild(row);
+  });
+}
+
+// ---- Add Person ----
+function addPerson() {
+  const name = document.getElementById('new-name').value.trim();
+  if (!name) { alert('Please enter a name'); return; }
+  if (newSourceAmounts.size === 0) { alert('Select at least one source'); return; }
+
+  // validate each source amount
+  for (const [srcId, amt] of newSourceAmounts) {
+    if (!amt || amt <= 0) { alert('Enter a valid amount for each selected source'); return; }
+    const avail = getAvailableBalance(srcId);
+    if (amt > avail) {
+      alert(`Amount from ${srcId === 'total' ? 'Total Sum' : people.find(p=>p.id===srcId)?.name} exceeds available balance of ${fmt(avail)}`);
+      return;
+    }
+  }
+
+  const id = 'p' + (uid++);
+  const sources = Array.from(newSourceAmounts.entries()).map(([srcId, amount]) => ({ srcId, amount }));
+  people.push({ id, name, emoji: selectedEmoji, sources });
+
+  const canvas = document.getElementById('canvas-area');
+  nodePositions[id] = {
+    x: 100 + Math.random() * (canvas.clientWidth - 300),
+    y: 150 + Math.random() * (canvas.clientHeight - 300)
+  };
+
+  document.getElementById('new-name').value = '';
+  newSourceAmounts = new Map();
+  saveState();
+  render();
+  switchTab('people');
+}
+
+// ---- Delete ----
+function deletePerson(id) {
+  if (!confirm('Remove this person from the flow?')) return;
+  people = people.filter(p => p.id !== id);
+  people.forEach(p => { p.sources = p.sources.filter(s => s.srcId !== id); });
+  delete nodePositions[id];
+  saveState();
+  render();
+}
+
+// ---- Edit Modal ----
+function openEdit(id) {
+  editingId = id;
+  const p = people.find(x => x.id === id);
+  document.getElementById('edit-name').value = p.name;
+
+  const container = document.getElementById('edit-connections');
+  container.innerHTML = '';
+
+  const allSources = [
+    { id: 'total', name: 'Total Sum', emoji: '💰' },
+    ...people.filter(x => x.id !== id).map(x => ({ id: x.id, name: x.name, emoji: x.emoji }))
+  ];
+
+  function updatePreview() {
+    const total = Array.from(container.querySelectorAll('input[type=number]')).reduce((s, inp) => {
+      const cb = container.querySelector(`input[type=checkbox][data-srcid="${inp.dataset.amtid}"]`);
+      return s + (cb && cb.checked ? (parseFloat(inp.value) || 0) : 0);
+    }, 0);
+    document.getElementById('edit-total-preview').textContent = fmt(total);
+  }
+
+  allSources.forEach(src => {
+    const existing = p.sources.find(s => s.srcId === src.id);
+    const checked = !!existing;
+    const curVal = existing ? existing.amount : '';
+    const avail = getAvailableBalance(src.id, id);
+    const maxAvail = avail + (existing ? existing.amount : 0); // add back current allocation
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);';
+    if (checked) row.style.borderColor = 'var(--accent)';
+
+    row.innerHTML = `
+      <input type="checkbox" data-srcid="${src.id}" ${checked ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)">
+      <span style="font-size:1.2rem">${src.emoji}</span>
+      <span style="flex:1;font-size:0.85rem;font-weight:500">${src.name}</span>
+      <span style="font-size:0.72rem;color:var(--muted)">avail: ${fmt(maxAvail)}</span>
+      <input type="number" data-amtid="${src.id}" placeholder="₹" value="${curVal}"
+        style="width:80px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.82rem;background:var(--paper);${checked ? '' : 'opacity:0.4;pointer-events:none;'}"
+        min="0" max="${maxAvail}">
+    `;
+
+    const cb = row.querySelector('input[type=checkbox]');
+    const amt = row.querySelector('input[type=number]');
+
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        amt.style.opacity = '1'; amt.style.pointerEvents = 'auto';
+        row.style.borderColor = 'var(--accent)';
+        amt.focus();
+      } else {
+        amt.style.opacity = '0.4'; amt.style.pointerEvents = 'none';
+        amt.value = '';
+        row.style.borderColor = 'var(--border)';
+      }
+      updatePreview();
+    });
+
+    amt.addEventListener('input', () => {
+      let v = parseFloat(amt.value) || 0;
+      if (v > maxAvail) { v = maxAvail; amt.value = v; }
+      updatePreview();
+    });
+
+    container.appendChild(row);
+    updatePreview();
+  });
+
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+function saveEdit() {
+  if (!editingId) return;
+  const p = people.find(x => x.id === editingId);
+  const newName = document.getElementById('edit-name').value.trim();
+  if (newName) p.name = newName;
+
+  const container = document.getElementById('edit-connections');
+  const newSources = [];
+
+  const allRows = container.querySelectorAll('input[type=checkbox]');
+  let valid = true;
+  allRows.forEach(cb => {
+    if (!cb.checked) return;
+    const srcId = cb.dataset.srcid;
+    const amt = parseFloat(container.querySelector(`input[data-amtid="${srcId}"]`).value) || 0;
+    const avail = getAvailableBalance(srcId, editingId);
+    const maxAvail = avail + (p.sources.find(s => s.srcId === srcId)?.amount || 0);
+    if (amt <= 0 || amt > maxAvail) {
+      alert(`Invalid amount for source — max available is ${fmt(maxAvail)}`);
+      valid = false;
+    } else {
+      newSources.push({ srcId, amount: amt });
+    }
+  });
+
+  if (!valid) return;
+  if (newSources.length === 0) { alert('At least one source required'); return; }
+
+  p.sources = newSources;
+  closeModal();
+  saveState();
+  render();
+}
+
+// ---- Render ----
+function render() {
+  document.getElementById('header-total').textContent = fmt(totalSum);
+  document.getElementById('total-display').textContent = fmt(totalSum);
+
+  // "Total Distributed" = what people directly received from Total Sum node
+  const fromTotal = people.reduce((s, p) => {
+    const src = p.sources.find(x => x.srcId === 'total');
+    return s + (src ? src.amount : 0);
+  }, 0);
+  const totalAvail = totalSum - fromTotal;
+
+  document.getElementById('bar-total').textContent = fmt(totalSum);
+  document.getElementById('bar-distributed').textContent = fmt(fromTotal);
+  document.getElementById('bar-unaccounted').textContent = fmt(Math.max(0, totalAvail));
+  document.getElementById('bar-people').textContent = people.length;
+
+  renderAvatarPicker();
+  renderSourcePicker();
+  renderPeopleList();
+  renderCanvas();
+
+  document.getElementById('empty-state').style.display = (people.length === 0 && totalSum === 0) ? 'block' : 'none';
+}
+
+function renderPeopleList() {
+  const el = document.getElementById('people-list');
+  el.innerHTML = '';
+  people.forEach(p => {
+    const total = getPersonTotal(p.id);
+    const bal = getPersonBalance(p.id);
+    const d = document.createElement('div');
+    d.className = 'person-chip';
+    d.innerHTML = `
+      <div class="chip-avatar">${p.emoji}</div>
+      <div class="chip-info">
+        <div class="chip-name">${p.name}</div>
+        <div class="chip-balance ${bal >= 0 ? 'positive' : 'negative'}">
+          Received: ${fmt(total)} · Holds: ${fmt(bal)}
+        </div>
+      </div>
+    `;
+    el.appendChild(d);
+  });
+}
+
+function renderCanvas() {
+  const container = document.getElementById('nodes-container');
+  const svg = document.getElementById('flow-canvas');
+  const canvas = document.getElementById('canvas-area');
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  Array.from(container.children).forEach(c => { if (!c.id) container.removeChild(c); });
+  svg.innerHTML = '';
+
+  if (totalSum > 0 || people.length > 0) renderTotalNode(container);
+
+  // Draw arrows: one per source connection, labelled with that source's contribution
+  people.forEach(p => {
+    p.sources.forEach(src => {
+      const from = src.srcId === 'total' ? getTotalNodeCenter() : getNodeCenter(src.srcId);
+      const to = getNodeCenter(p.id);
+      if (!from || !to) return;
+      drawArrow(svg, from, to, fmt(src.amount));
+    });
+  });
+
+  people.forEach(p => renderPersonNode(container, p));
+}
+
+function getTotalNodeCenter() {
+  return { x: totalNodePos.x + 80, y: totalNodePos.y + 52 };
+}
+
+function getNodeCenter(id) {
+  const pos = nodePositions[id];
+  if (!pos) return null;
+  return { x: pos.x + 50, y: pos.y + 36 };
+}
+
+function drawArrow(svg, from, to, label) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const cx1 = from.x + dx * 0.5;
+  const cy1 = from.y;
+  const cx2 = from.x + dx * 0.5;
+  const cy2 = to.y;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M${from.x},${from.y} C${cx1},${cy1} ${cx2},${cy2} ${to.x},${to.y}`);
+  path.setAttribute('class', 'arrow-path');
+
+  const angle = Math.atan2(to.y - cy2, to.x - cx2);
+  const al = 12, aw = 6;
+  const ax1 = to.x - al * Math.cos(angle) + aw * Math.sin(angle);
+  const ay1 = to.y - al * Math.sin(angle) - aw * Math.cos(angle);
+  const ax2 = to.x - al * Math.cos(angle) - aw * Math.sin(angle);
+  const ay2 = to.y - al * Math.sin(angle) + aw * Math.cos(angle);
+  const head = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  head.setAttribute('points', `${to.x},${to.y} ${ax1},${ay1} ${ax2},${ay2}`);
+  head.setAttribute('fill', '#3a6b8a');
+  head.setAttribute('opacity', '0.7');
+
+  const midX = (from.x + to.x) / 2;
+  const midY = (from.y + to.y) / 2 - 10;
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('x', midX - 38); bg.setAttribute('y', midY - 14);
+  bg.setAttribute('width', '76'); bg.setAttribute('height', '18');
+  bg.setAttribute('rx', '4'); bg.setAttribute('fill', '#faf8f3'); bg.setAttribute('opacity', '0.9');
+  const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+  text.setAttribute('x', midX); text.setAttribute('y', midY);
+  text.setAttribute('text-anchor', 'middle');
+  text.setAttribute('class', 'arrow-label');
+  text.textContent = label;
+
+  svg.appendChild(path); svg.appendChild(bg); svg.appendChild(text); svg.appendChild(head);
+}
+
+function renderTotalNode(container) {
+  const avail = getAvailableBalance('total');
+  const d = document.createElement('div');
+  d.className = 'total-node';
+  d.style.left = totalNodePos.x + 'px';
+  d.style.top = totalNodePos.y + 'px';
+  d.innerHTML = `
+    <div class="tn-label">Total Sum Received</div>
+    <div class="tn-amount">${fmt(totalSum)}</div>
+    <div style="font-size:0.75rem;opacity:0.6;margin-top:4px">Available: ${fmt(avail)}</div>
+  `;
+  makeDraggable(d, (x, y) => { totalNodePos.x = x; totalNodePos.y = y; renderCanvas(); });
+  container.appendChild(d);
+}
+
+function renderPersonNode(container, p) {
+  if (!nodePositions[p.id]) nodePositions[p.id] = { x: 200, y: 200 };
+  const pos = nodePositions[p.id];
+  const total = getPersonTotal(p.id);
+  const bal = getPersonBalance(p.id);
+
+  const d = document.createElement('div');
+  d.className = 'node';
+  d.dataset.id = p.id;
+  d.style.left = pos.x + 'px';
+  d.style.top = pos.y + 'px';
+
+  d.innerHTML = `
+    <div class="node-avatar">${p.emoji}</div>
+    <div class="node-name">${p.name}</div>
+    <div class="node-card">Received: ${fmt(total)}</div>
+    <div class="node-remaining ${bal < 0 ? 'neg' : ''}">holds: ${fmt(bal)}</div>
+    <div class="node-actions">
+      <button class="node-btn" onclick="openEdit('${p.id}')">✏️ edit</button>
+      <button class="node-btn del" onclick="deletePerson('${p.id}')">🗑 del</button>
+    </div>
+  `;
+
+  makeDraggable(d, (x, y) => { nodePositions[p.id].x = x; nodePositions[p.id].y = y; renderCanvas(); });
+  container.appendChild(d);
+}
+
+// ---- Dragging ----
+function makeDraggable(el, onMove) {
+  el.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const ox = e.clientX - rect.left;
+    const oy = e.clientY - rect.top;
+
+    const move = ev => {
+      const cr = document.getElementById('canvas-area').getBoundingClientRect();
+      onMove(ev.clientX - cr.left - ox, ev.clientY - cr.top - oy);
+      el.style.left = nodePositions[el.dataset?.id]?.x + 'px' || el.style.left;
+      el.style.top = nodePositions[el.dataset?.id]?.y + 'px' || el.style.top;
+      // directly update element position for smooth drag
+      const nx = ev.clientX - cr.left - ox;
+      const ny = ev.clientY - cr.top - oy;
+      el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    };
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); saveState(); renderCanvas(); };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+}
+
+// ---- Auto Layout ----
+function autoLayout() {
+  const canvas = document.getElementById('canvas-area');
+  const W = canvas.clientWidth;
+  totalNodePos = { x: W / 2 - 80, y: 40 };
+
+  const levels = {};
+  const visited = new Set();
+
+  function assignLevel(id, lvl) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    levels[lvl] = levels[lvl] || [];
+    levels[lvl].push(id);
+    people.filter(p => p.sources.some(s => s.srcId === id)).forEach(p => assignLevel(p.id, lvl + 1));
+  }
+
+  people.filter(p => p.sources.some(s => s.srcId === 'total')).forEach(p => assignLevel(p.id, 1));
+  people.forEach(p => { if (!visited.has(p.id)) { levels[99] = levels[99] || []; levels[99].push(p.id); } });
+
+  Object.entries(levels).forEach(([lvl, ids]) => {
+    const y = 40 + parseInt(lvl) * 160;
+    ids.forEach((id, i) => {
+      nodePositions[id] = { x: (W / (ids.length + 1)) * (i + 1) - 50, y };
+    });
+  });
+
+  saveState();
+  render();
+}
+
+// ---- Tabs ----
+function switchTab(tab) {
+  document.querySelectorAll('.sidebar-tab').forEach((t, i) => {
+    t.classList.toggle('active', (tab === 'add' && i === 0) || (tab === 'people' && i === 1));
+  });
+  document.getElementById('tab-add').classList.toggle('active', tab === 'add');
+  document.getElementById('tab-people').classList.toggle('active', tab === 'people');
+}
+
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-modal')) closeModal();
+});
+
+window.addEventListener('resize', render);
+</script>
+</body>
+</html>
