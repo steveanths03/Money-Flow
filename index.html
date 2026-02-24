@@ -111,7 +111,7 @@
   .person-chip .chip-avatar { font-size:1.4rem;width:34px;height:34px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border); }
   .person-chip .chip-info { flex:1;min-width:0; }
   .person-chip .chip-name { font-weight:500;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .person-chip .chip-balance { font-size:0.72rem;color:var(--muted); }
+  .chip-balance { font-size:0.72rem;color:var(--muted); }
   .chip-balance.positive { color:var(--green); }
   .chip-balance.negative { color:var(--red); }
 
@@ -120,6 +120,7 @@
     position: relative; overflow: scroll; background: var(--bg);
     background-image: radial-gradient(circle, #d8d4c8 1px, transparent 1px);
     background-size: 28px 28px;
+    overflow-x: scroll; overflow-y: scroll;
   }
   .canvas-area::-webkit-scrollbar { width: 8px; height: 8px; }
   .canvas-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
@@ -142,7 +143,7 @@
     transition: all 0.15s;
   }
   .node-name { font-family:'Caveat',cursive;font-size:1rem;font-weight:600;margin-top:5px;text-align:center;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .node-card { background:var(--paper);border:2px solid var(--border);border-radius:9px;padding:6px 12px;margin-top:5px;font-family:'Caveat',cursive;font-size:1rem;font-weight:600;text-align:center;min-width:90px;box-shadow:2px 2px 0 var(--border); }
+  .node-card { background:var(--paper);border:2px solid var(--border);border-radius:9px;padding:6px 14px;margin-top:5px;font-family:'Caveat',cursive;font-size:1.3rem;font-weight:700;text-align:center;min-width:90px;box-shadow:2px 2px 0 var(--border);letter-spacing:0.3px; }
   .node-remaining { font-size:0.68rem;color:var(--muted);font-family:'DM Sans',sans-serif;margin-top:2px; }
   .node-card-neg { background: #fff0ee !important; border-color: var(--red) !important; color: var(--red) !important; box-shadow: 2px 2px 0 #f5b8b0 !important; }
   .node-card-zero { background: #f5f5f0 !important; border-color: var(--muted) !important; color: var(--muted) !important; }
@@ -240,6 +241,63 @@
     font-weight: 600;
     fill: white;
   }
+
+  /* ===================== MOBILE ===================== */
+  @media (max-width: 700px) {
+    header { padding: 10px 14px; }
+    header h1 { font-size: 1.4rem; }
+    .header-total .value { font-size: 1.2rem; }
+    #sync-status { display: none; }
+
+    .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+
+    .sidebar {
+      border-right: none;
+      border-bottom: 2px solid var(--border);
+      padding: 12px 14px;
+      gap: 12px;
+      max-height: 42vh;
+      overflow-y: auto;
+    }
+    .sidebar h3 { font-size: 1.1rem; margin-bottom: 6px; }
+
+    .total-box { padding: 12px 14px; }
+    .total-box .tb-amount { font-size: 1.6rem; }
+
+    .avatar-grid { grid-template-columns: repeat(8, 1fr); max-height: 110px; }
+    .av-item { width: 30px; height: 30px; font-size: 1.1rem; }
+    /* On mobile: tap avatar to add, no drag needed */
+    .drag-hint { display: none; }
+    .tap-hint { display: block !important; }
+
+    .canvas-area {
+      height: calc(58vh - 100px);
+      min-height: 300px;
+    }
+
+    /* node actions always visible on mobile */
+    .node-actions { opacity: 1 !important; }
+
+    /* bottom bar full width on mobile */
+    .totals-bar {
+      left: 0 !important;
+      padding: 8px 12px;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .totals-bar .stat .s-value { font-size: 1rem; }
+    .totals-bar .stat .s-label { font-size: 0.6rem; }
+
+    /* modal full width */
+    .modal { min-width: unset; width: 95%; padding: 16px; }
+
+    /* people list taller on mobile since sidebar scrolls */
+    .people-list { max-height: none; }
+
+    .canvas-toolbar { top: 8px; right: 8px; }
+    .btn-sm { padding: 4px 8px; font-size: 0.74rem; }
+  }
 </style>
 </head>
 <body>
@@ -283,6 +341,7 @@
       <div class="avatar-category-tabs" id="cat-tabs"></div>
       <div class="avatar-grid" id="avatar-grid"></div>
       <div class="drag-hint">Drag any avatar onto the canvas to add a person</div>
+      <div class="tap-hint" style="display:none;font-size:0.72rem;color:var(--muted);text-align:center;padding:6px 0;border:1.5px dashed var(--border);border-radius:6px;margin-top:6px;font-style:italic;">Tap any avatar to add a person</div>
     </div>
 
     <!-- People tab -->
@@ -299,7 +358,11 @@
     <div class="drop-overlay" id="drop-overlay"><span>Drop here to add person ✦</span></div>
     <div class="canvas-toolbar">
       <button class="btn btn-secondary btn-sm" onclick="autoLayout()">↔ Auto Layout</button>
+      <button class="btn btn-secondary btn-sm" onclick="zoomIn()">＋</button>
+      <button class="btn btn-secondary btn-sm" id="zoom-label" style="pointer-events:none;min-width:38px;">100%</button>
+      <button class="btn btn-secondary btn-sm" onclick="zoomOut()">－</button>
     </div>
+    <div id="canvas-world" style="position:absolute;top:0;left:0;transform-origin:0 0;min-width:2400px;min-height:1600px;">
     <svg id="flow-canvas"></svg>
     <div class="nodes-container" id="nodes-container">
       <div class="empty-state" id="empty-state">
@@ -374,9 +437,10 @@ const AVATAR_CATEGORIES = {
 
 // ===================== STATE =====================
 let totalSum = 0, people = [], nodePositions = {}, totalNodePos = {x:80, y:80}, uid = 1;
-let pendingDrop = null; // {emoji, x, y}
+let pendingDrop = null;
 let editingId = null;
 let activeCat = 'People';
+let canvasScale = 1;
 
 const SUPABASE_URL = 'https://fwxfrukzqwvpcbeuonlc.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eGZydWt6cXd2cGNiZXVvbmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjkyNjksImV4cCI6MjA4NzM0NTI2OX0.c1A84hpzHigktiuHg_E0CZmrZGyW9mvjTZj4uF1NzqY';
@@ -500,11 +564,31 @@ function renderAvatarPalette() {
     d.className = 'av-item';
     d.textContent = emoji;
     d.draggable = true;
-    d.title = 'Drag to canvas';
+    d.title = 'Drag to canvas or click to add';
+
+    // --- FIX: use a flag set on dragstart, cleared on dragend ---
+    // This avoids the click event firing after a drag ends.
+    let isDragging = false;
+
     d.addEventListener('dragstart', e => {
+      isDragging = true;
       e.dataTransfer.setData('emoji', emoji);
       e.dataTransfer.effectAllowed = 'copy';
     });
+
+    d.addEventListener('dragend', () => {
+      // Small delay so the click event (which fires before dragend in some browsers) is ignored
+      setTimeout(() => { isDragging = false; }, 50);
+    });
+
+    d.addEventListener('click', () => {
+      if (isDragging) return; // Was a real drag, not a tap
+      const canvas = document.getElementById('canvas-area');
+      const x = Math.max(40, canvas.scrollLeft + canvas.clientWidth/2 - 40 + (Math.random()-0.5)*120);
+      const y = Math.max(40, canvas.scrollTop + canvas.clientHeight/2 - 40 + (Math.random()-0.5)*120);
+      openAddModal(emoji, x, y);
+    });
+
     grid.appendChild(d);
   });
 }
@@ -517,9 +601,9 @@ function handleCanvasDrop(e) {
   if (!emoji) return;
   const canvas = document.getElementById('canvas-area');
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left - 40 + canvas.scrollLeft;
-  const y = e.clientY - rect.top  - 40 + canvas.scrollTop;
-  openAddModal(emoji, x, y);
+  const x = (e.clientX - rect.left + canvas.scrollLeft) / canvasScale - 44;
+  const y = (e.clientY - rect.top  + canvas.scrollTop)  / canvasScale - 34;
+  openAddModal(emoji, Math.max(10, x), Math.max(10, y));
 }
 
 // ===================== ADD MODAL =====================
@@ -557,7 +641,6 @@ function confirmAdd() {
 
   closeAddModal();
   saveState(); render();
-  switchTab('people');
 }
 
 // ===================== SOURCE ROWS BUILDER =====================
@@ -699,6 +782,7 @@ function render() {
   renderAvatarPalette();
   renderPeopleList();
   renderCanvas();
+  applyZoom();
 
   document.getElementById('empty-state').style.display = (people.length===0 && totalSum===0) ? 'block' : 'none';
 }
@@ -727,14 +811,12 @@ function renderCanvas() {
   const container = document.getElementById('nodes-container');
   const svg = document.getElementById('flow-canvas');
 
-  // Clear only non-id nodes
   Array.from(container.children).forEach(c => { if (!c.id) container.removeChild(c); });
   svg.innerHTML = '';
 
-  // Compute bounding box of all nodes to size the canvas world
   const allPos = [totalNodePos, ...Object.values(nodePositions)];
-  const maxX = Math.max(1200, ...allPos.map(p => p.x + 300));
-  const maxY = Math.max(800, ...allPos.map(p => p.y + 300));
+  const maxX = Math.max(2400, ...allPos.map(p => p.x + 300));
+  const maxY = Math.max(1600, ...allPos.map(p => p.y + 300));
   const W = maxX, H = maxY;
 
   svg.setAttribute('width', W); svg.setAttribute('height', H);
@@ -743,7 +825,6 @@ function renderCanvas() {
 
   if (totalSum > 0 || people.length > 0) renderTotalNode(container);
 
-  // Build edge list
   const edges = [];
   people.forEach(p => {
     p.sources.forEach(src => {
@@ -751,20 +832,12 @@ function renderCanvas() {
     });
   });
 
-  // For each edge, detect bidirectional pairs
-  // Track which pairs we've seen so we can assign consistent side offsets
-  const pairSeen = new Set();
-  edges.forEach((edge, idx) => {
-    const key = [edge.from, edge.to].sort().join('|');
+  edges.forEach((edge) => {
     const reverseExists = edges.some(e => e.from === edge.to && e.to === edge.from);
     const isBidirectional = reverseExists;
 
-    // For bidirectional: determine which side this edge bows to
-    // Always bow based on alphabetical order of ids so both edges in a pair get opposite sides
     let bowSide = 0;
     if (isBidirectional) {
-      const ids = [edge.from, edge.to];
-      // edge going from "lower" id bows left (+1), edge going from "higher" id bows right (-1)
       bowSide = edge.from < edge.to ? 1 : -1;
     }
 
@@ -776,164 +849,6 @@ function renderCanvas() {
   });
 
   people.forEach(p => renderPersonNode(container, p));
-}
-
-// Evaluate quadratic bezier point at t
-function qbez(p0, c, p1, t) {
-  const mt = 1 - t;
-  return {
-    x: mt*mt*p0.x + 2*mt*t*c.x + t*t*p1.x,
-    y: mt*mt*p0.y + 2*mt*t*c.y + t*t*p1.y
-  };
-}
-function qbezAngleRad(p0, c, p1, t) {
-  const mt = 1 - t;
-  const tx = 2*mt*(c.x - p0.x) + 2*t*(p1.x - c.x);
-  const ty = 2*mt*(c.y - p0.y) + 2*t*(p1.y - c.y);
-  return Math.atan2(ty, tx);
-}
-
-// Approximate arc length of quadratic bezier via sampling
-function qbezLength(p0, c, p1, steps=20) {
-  let len = 0, prev = p0;
-  for (let i=1; i<=steps; i++) {
-    const pt = qbez(p0, c, p1, i/steps);
-    const dx = pt.x-prev.x, dy = pt.y-prev.y;
-    len += Math.sqrt(dx*dx+dy*dy);
-    prev = pt;
-  }
-  return len;
-}
-
-// Find t on bezier for a given arc length ratio using binary search
-function tAtArcRatio(p0, c, p1, ratio) {
-  let lo=0, hi=1;
-  const target = ratio * qbezLength(p0, c, p1);
-  let len = 0;
-  let prev = p0;
-  // Walk in steps and find crossing
-  const steps = 100;
-  for (let i=1; i<=steps; i++) {
-    const t = i/steps;
-    const pt = qbez(p0, c, p1, t);
-    const dx = pt.x-prev.x, dy = pt.y-prev.y;
-    len += Math.sqrt(dx*dx+dy*dy);
-    prev = pt;
-    if (len >= target) return t;
-  }
-  return 1;
-}
-
-function drawArrow(svg, from, to, label, isBidirectional, bowSide, isFromTotal) {
-  const color = isFromTotal ? '#2a2a26' : (isBidirectional ? (bowSide < 0 ? '#3a6b8a' : '#b85c20') : '#3a6b8a');
-  const strokeW = 2;
-
-  const dx = to.x - from.x, dy = to.y - from.y;
-  const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-  const nx = -dy / dist, ny = dx / dist;
-
-  // Offset bidirectional lines so they don't overlap
-  const offset = isBidirectional ? bowSide * 18 : 0;
-  const fx = from.x + nx * offset, fy = from.y + ny * offset;
-  const tx = to.x + nx * offset,   ty = to.y + ny * offset;
-
-  // ---- Original S-curve cubic bezier ----
-  // Control points: horizontal midpoint, first stays at start Y, second jumps to end Y
-  const ddx = tx - fx;
-  const scx1 = fx + ddx * 0.5;
-  const scy1 = fy;
-  const scx2 = fx + ddx * 0.5;
-  const scy2 = ty;
-
-  const pathD = `M${fx},${fy} C${scx1},${scy1} ${scx2},${scy2} ${tx},${ty}`;
-
-  // Cubic bezier point helper
-  function cbezPt(t) {
-    const mt = 1-t;
-    return {
-      x: mt*mt*mt*fx + 3*mt*mt*t*scx1 + 3*mt*t*t*scx2 + t*t*t*tx,
-      y: mt*mt*mt*fy + 3*mt*mt*t*scy1 + 3*mt*t*t*scy2 + t*t*t*ty
-    };
-  }
-  function cbezLen(steps=30) {
-    let len=0, prev=cbezPt(0);
-    for(let i=1;i<=steps;i++){const pt=cbezPt(i/steps);const ddx=pt.x-prev.x,ddy=pt.y-prev.y;len+=Math.sqrt(ddx*ddx+ddy*ddy);prev=pt;}
-    return len;
-  }
-
-  // Unique id for this path so animateMotion can reference it
-  const pathId = 'fp-' + Math.random().toString(36).slice(2, 8);
-
-  // ---- Invisible path for animateMotion to follow ----
-  const motionPath = document.createElementNS('http://www.w3.org/2000/svg','path');
-  motionPath.setAttribute('id', pathId);
-  motionPath.setAttribute('d', pathD);
-  motionPath.setAttribute('fill', 'none');
-  motionPath.setAttribute('stroke', 'none');
-  svg.appendChild(motionPath);
-
-  // ---- Visible line (thin, semi-transparent) ----
-  const line = document.createElementNS('http://www.w3.org/2000/svg','path');
-  line.setAttribute('d', pathD);
-  line.setAttribute('stroke', color);
-  line.setAttribute('stroke-width', strokeW);
-  line.setAttribute('fill', 'none');
-  line.setAttribute('opacity', '0.35');
-  svg.appendChild(line);
-
-  // ---- Animated arrows moving along the path ----
-  const totalLen = cbezLen();
-  const dur = Math.max(1.2, totalLen / 120);
-  const numArrows = 3;
-  const arrowSize = 8;
-  const arrowPts = `${arrowSize},0 ${-arrowSize*0.55},${arrowSize*0.55} ${-arrowSize*0.55},${-arrowSize*0.55}`;
-
-  for (let i = 0; i < numArrows; i++) {
-    const delay = -(dur * i / numArrows);
-    const arrowGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
-
-    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-    poly.setAttribute('points', arrowPts);
-    poly.setAttribute('fill', color);
-    poly.setAttribute('opacity', '1');
-    arrowGroup.appendChild(poly);
-
-    const anim = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
-    anim.setAttribute('dur', `${dur}s`);
-    anim.setAttribute('repeatCount', 'indefinite');
-    anim.setAttribute('begin', `${delay}s`);
-    anim.setAttribute('rotate', 'auto');
-
-    const mpath = document.createElementNS('http://www.w3.org/2000/svg','mpath');
-    mpath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
-    anim.appendChild(mpath);
-    arrowGroup.appendChild(anim);
-    svg.appendChild(arrowGroup);
-  }
-
-  // ---- Amount label — plain text at midpoint, rotated along curve ----
-  const midPt = cbezPt(0.5);
-  const eps = 0.01;
-  const pA = cbezPt(0.5 - eps), pB = cbezPt(0.5 + eps);
-  let midAngle = Math.atan2(pB.y - pA.y, pB.x - pA.x) * 180 / Math.PI;
-  if (midAngle > 90 || midAngle < -90) midAngle += 180;
-
-  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-  g.setAttribute('transform', `translate(${midPt.x},${midPt.y}) rotate(${midAngle})`);
-
-  const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-  txt.setAttribute('x', '0');
-  txt.setAttribute('y', '-9');
-  txt.setAttribute('text-anchor', 'middle');
-  txt.setAttribute('font-family', 'Caveat, cursive');
-  txt.setAttribute('font-size', '15');
-  txt.setAttribute('font-weight', '600');
-  txt.setAttribute('fill', color);
-  txt.setAttribute('opacity', '0.9');
-  txt.textContent = label;
-
-  g.appendChild(txt);
-  svg.appendChild(g);
 }
 
 function getTotalNodeCenter() {
@@ -975,45 +890,89 @@ function renderPersonNode(container, p) {
   d.style.top = pos.y + 'px';
 
   d.innerHTML = `
-    <div class="node-avatar">${p.emoji}</div>
+    <div class="node-avatar" title="Click to edit">${p.emoji}</div>
     <div class="node-name">${p.name}</div>
-    <div class="node-card ${bal<0?'node-card-neg':bal===0?'node-card-zero':''}">⚡ ${fmt(bal)}</div>
+    <div class="node-card ${bal<0?'node-card-neg':bal===0?'node-card-zero':''}">${fmt(bal)}</div>
     <div class="node-remaining" style="color:var(--muted)">received: ${fmt(total)}</div>
     <div class="node-actions">
-      <button class="node-btn" onclick="openEdit('${p.id}')">✏️ edit</button>
-      <button class="node-btn del" onclick="deletePerson('${p.id}')">🗑 del</button>
+      <button class="node-btn del" onclick="deletePerson('${p.id}')">🗑 remove</button>
     </div>
   `;
 
-  makeDraggable(d, (x,y) => { nodePositions[p.id].x=x; nodePositions[p.id].y=y; });
+  // FIX: pass onTap so clicking (not dragging) the node opens the edit modal
+  makeDraggable(d, (x,y) => { nodePositions[p.id].x=x; nodePositions[p.id].y=y; }, (target) => {
+    if (!target.closest('.node-actions')) openEdit(p.id);
+  });
   container.appendChild(d);
 }
 
-// ===================== DRAGGING =====================
-function makeDraggable(el, onMove) {
+// ===================== DRAGGING (mouse + touch) =====================
+function makeDraggable(el, onMove, onTap) {
+  function doMove(clientX, clientY, ox, oy) {
+    const canvas = document.getElementById('canvas-area');
+    const cr = canvas.getBoundingClientRect();
+    // Account for zoom when computing position
+    const nx = (clientX - cr.left - ox + canvas.scrollLeft) / canvasScale;
+    const ny = (clientY - cr.top  - oy + canvas.scrollTop)  / canvasScale;
+    el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    onMove(nx, ny);
+    renderCanvas();
+  }
+
+  // Mouse
   el.addEventListener('mousedown', e => {
-    if (e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return;
+    if (e.target.tagName==='BUTTON' || e.target.tagName==='INPUT') return;
     e.preventDefault();
     const rect = el.getBoundingClientRect();
     const ox = e.clientX - rect.left, oy = e.clientY - rect.top;
+    let moved = false;
+    const startX = e.clientX, startY = e.clientY;
 
     const move = ev => {
-      const canvas = document.getElementById('canvas-area');
-      const cr = canvas.getBoundingClientRect();
-      const nx = ev.clientX - cr.left - ox + canvas.scrollLeft;
-      const ny = ev.clientY - cr.top  - oy + canvas.scrollTop;
-      el.style.left = nx + 'px'; el.style.top = ny + 'px';
-      onMove(nx, ny);
-      renderCanvas();
+      if (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4) moved = true;
+      doMove(ev.clientX, ev.clientY, ox, oy);
     };
-    const up = () => {
+    const up = ev => {
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mouseup', up);
-      saveState(); renderCanvas();
+      if (!moved && onTap) {
+        onTap(ev.target);
+      } else if (moved) {
+        saveState(); renderCanvas();
+      }
     };
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', up);
   });
+
+  // Touch
+  el.addEventListener('touchstart', e => {
+    if (e.target.tagName==='BUTTON' || e.target.tagName==='INPUT') return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const rect = el.getBoundingClientRect();
+    const ox = t.clientX - rect.left, oy = t.clientY - rect.top;
+    const startX = t.clientX, startY = t.clientY;
+    let moved = false;
+
+    const move = ev => {
+      ev.preventDefault();
+      const t2 = ev.touches[0];
+      if (Math.abs(t2.clientX - startX) > 6 || Math.abs(t2.clientY - startY) > 6) moved = true;
+      doMove(t2.clientX, t2.clientY, ox, oy);
+    };
+    const up = ev => {
+      el.removeEventListener('touchmove', move);
+      el.removeEventListener('touchend', up);
+      if (!moved && onTap) {
+        onTap(ev.target);
+      } else if (moved) {
+        saveState(); renderCanvas();
+      }
+    };
+    el.addEventListener('touchmove', move, {passive: false});
+    el.addEventListener('touchend', up);
+  }, {passive: false});
 }
 
 // ===================== AUTO LAYOUT =====================
@@ -1050,6 +1009,149 @@ function switchTab(tab) {
   document.getElementById('tab-avatars').classList.toggle('active', tab==='avatars');
   document.getElementById('tab-people').classList.toggle('active', tab==='people');
 }
+
+// ===================== SVG ARROWS =====================
+function drawArrow(svg, from, to, label, isBidirectional, bowSide, isFromTotal) {
+  const color = isFromTotal ? '#2a2a26' : (isBidirectional ? (bowSide < 0 ? '#3a6b8a' : '#b85c20') : '#3a6b8a');
+  const strokeW = 2;
+
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+  const nx = -dy / dist, ny = dx / dist;
+
+  const offset = isBidirectional ? bowSide * 28 : 0;
+  const fx = from.x + nx * offset, fy = from.y + ny * offset;
+  const tx = to.x + nx * offset,   ty = to.y + ny * offset;
+
+  const ddx = tx - fx, ddy = ty - fy;
+  const bowPush = isBidirectional ? bowSide * 60 : 0;
+  const scx1 = fx + ddx * 0.5 + nx * bowPush;
+  const scy1 = fy               + ny * bowPush;
+  const scx2 = fx + ddx * 0.5 + nx * bowPush;
+  const scy2 = ty               + ny * bowPush;
+
+  const pathD = `M${fx},${fy} C${scx1},${scy1} ${scx2},${scy2} ${tx},${ty}`;
+
+  function cbezPt(t) {
+    const mt = 1-t;
+    return {
+      x: mt*mt*mt*fx + 3*mt*mt*t*scx1 + 3*mt*t*t*scx2 + t*t*t*tx,
+      y: mt*mt*mt*fy + 3*mt*mt*t*scy1 + 3*mt*t*t*scy2 + t*t*t*ty
+    };
+  }
+  function cbezLen(steps=30) {
+    let len=0, prev=cbezPt(0);
+    for(let i=1;i<=steps;i++){const pt=cbezPt(i/steps);const ddx=pt.x-prev.x,ddy=pt.y-prev.y;len+=Math.sqrt(ddx*ddx+ddy*ddy);prev=pt;}
+    return len;
+  }
+
+  const pathId = 'fp-' + Math.random().toString(36).slice(2, 8);
+
+  const motionPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  motionPath.setAttribute('id', pathId);
+  motionPath.setAttribute('d', pathD);
+  motionPath.setAttribute('fill', 'none');
+  motionPath.setAttribute('stroke', 'none');
+  svg.appendChild(motionPath);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+  line.setAttribute('d', pathD);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', strokeW);
+  line.setAttribute('fill', 'none');
+  line.setAttribute('opacity', '0.35');
+  svg.appendChild(line);
+
+  const totalLen = cbezLen();
+  const dur = Math.max(1.2, totalLen / 120);
+  const numArrows = 3;
+  const arrowSize = 8;
+  const arrowPts = `${arrowSize},0 ${-arrowSize*0.55},${arrowSize*0.55} ${-arrowSize*0.55},${-arrowSize*0.55}`;
+
+  for (let i = 0; i < numArrows; i++) {
+    const delay = -(dur * i / numArrows);
+    const arrowGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', arrowPts);
+    poly.setAttribute('fill', color);
+    poly.setAttribute('opacity', '1');
+    arrowGroup.appendChild(poly);
+
+    const anim = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    anim.setAttribute('dur', `${dur}s`);
+    anim.setAttribute('repeatCount', 'indefinite');
+    anim.setAttribute('begin', `${delay}s`);
+    anim.setAttribute('rotate', 'auto');
+
+    const mpath = document.createElementNS('http://www.w3.org/2000/svg','mpath');
+    mpath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+    anim.appendChild(mpath);
+    arrowGroup.appendChild(anim);
+    svg.appendChild(arrowGroup);
+  }
+
+  const midPt = cbezPt(0.5);
+  const eps = 0.01;
+  const pA = cbezPt(0.5 - eps), pB = cbezPt(0.5 + eps);
+  let midAngle = Math.atan2(pB.y - pA.y, pB.x - pA.x) * 180 / Math.PI;
+  if (midAngle > 90 || midAngle < -90) midAngle += 180;
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform', `translate(${midPt.x},${midPt.y}) rotate(${midAngle})`);
+
+  const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x', '0');
+  txt.setAttribute('y', '-9');
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('font-family', 'Caveat, cursive');
+  txt.setAttribute('font-size', '15');
+  txt.setAttribute('font-weight', '600');
+  txt.setAttribute('fill', color);
+  txt.setAttribute('opacity', '0.9');
+  txt.textContent = label;
+
+  g.appendChild(txt);
+  svg.appendChild(g);
+}
+
+// ===================== ZOOM =====================
+function applyZoom() {
+  const world = document.getElementById('canvas-world');
+  if (world) world.style.transform = `scale(${canvasScale})`;
+  const lbl = document.getElementById('zoom-label');
+  if (lbl) lbl.textContent = Math.round(canvasScale * 100) + '%';
+}
+function zoomIn() {
+  canvasScale = Math.min(2, +(canvasScale + 0.15).toFixed(2));
+  applyZoom();
+}
+function zoomOut() {
+  canvasScale = Math.max(0.25, +(canvasScale - 0.15).toFixed(2));
+  applyZoom();
+}
+
+// Pinch-to-zoom on canvas
+(function() {
+  let lastDist = null;
+  const ca = () => document.getElementById('canvas-area');
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length === 2 && ca().contains(e.target)) lastDist = null;
+  });
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2 || !ca().contains(e.target)) return;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (lastDist !== null) {
+      const delta = (dist - lastDist) * 0.005;
+      canvasScale = Math.min(2, Math.max(0.25, +(canvasScale + delta).toFixed(3)));
+      applyZoom();
+    }
+    lastDist = dist;
+  }, {passive: true});
+  document.addEventListener('touchend', e => { if (e.touches.length < 2) lastDist = null; });
+})();
 
 // Modal close on outside click
 document.getElementById('edit-modal').addEventListener('click', e => { if (e.target===document.getElementById('edit-modal')) closeEditModal(); });
